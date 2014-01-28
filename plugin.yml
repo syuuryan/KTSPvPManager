@@ -1,0 +1,59 @@
+name: KTSPvPManager
+main: net.jp.kts.syuuryan.KTSPvPManager
+version: 1.0.0
+default-permission: NOT_OP
+commands:
+    chat:
+        description: チームに属している時、チャットモードを切り替えます。
+        permission: KTSPvPManager.chat
+        permission-message: コマンドの権限が与えられていません。
+        usage: チームに属していません。
+    pvp:
+        description: PvPに関するコマンド
+        permission: KTSPvPManager.pvp
+        permission-message: コマンドの権限が与えられていません。
+        usage: "Usage: /pvp [team | player | ff | visible]"
+permissions:
+    chat.*:
+        description:
+        default: true
+    pvp.*:
+        description:
+        default: true
+        children:
+            pvp.team.add: true
+            pvp.team.join: true
+            pvp.team.remove: true
+            pvp.team.clear: true
+            pvp.player.add: true
+            pvp.player.remove: true
+            pvp.player.clear: true
+            pvp.ff: true
+            pvp.visible: true
+    pvp.team.add:
+        description: チームの作成を許可します
+        default: true
+    pvp.team.join:
+        description: チームへのプレイヤー参加を許可します
+        default: true
+    pvp.team.remove:
+        description: チームの削除を許可します
+        default: true
+    pvp.team.clear:
+        description: 全チームの削除を許可します
+        default: true
+    pvp.player.add:
+        description: プレイヤーのチームへの追加を許可します
+        default: true
+    pvp.player.remove:
+        description: プレイヤーのチームからの削除を許可します
+        default: true
+    pvp.player.clear:
+        description: チームから全プレイヤーの削除を許可します
+        default: true
+    pvp.ff:
+        description: フレンドリファイアの設定を許可します
+        default: true
+    pvp.visible:
+        description: チーム内透明ポーション可視化の設定を許可します
+        default: true
