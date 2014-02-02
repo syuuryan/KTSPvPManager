@@ -12,7 +12,7 @@ commands:
         description: PvPに関するコマンド
         permission: KTSPvPManager.pvp
         permission-message: コマンドの権限が与えられていません。
-        usage: "Usage: /pvp [team | player | ff | visible]"
+        usage: "Usage: /pvp [team | ff | fv]"
 permissions:
     chat.*:
         description:
@@ -25,11 +25,9 @@ permissions:
             pvp.team.join: true
             pvp.team.remove: true
             pvp.team.clear: true
-            pvp.player.add: true
-            pvp.player.remove: true
-            pvp.player.clear: true
+            pvp.team.list: true
             pvp.ff: true
-            pvp.visible: true
+            pvp.fv: true
     pvp.team.add:
         description: チームの作成を許可します
         default: true
@@ -37,23 +35,17 @@ permissions:
         description: チームへのプレイヤー参加を許可します
         default: true
     pvp.team.remove:
-        description: チームの削除を許可します
-        default: true
-    pvp.team.clear:
-        description: 全チームの削除を許可します
-        default: true
-    pvp.player.add:
-        description: プレイヤーのチームへの追加を許可します
-        default: true
-    pvp.player.remove:
         description: プレイヤーのチームからの削除を許可します
         default: true
-    pvp.player.clear:
+    pvp.team.clear:
         description: チームから全プレイヤーの削除を許可します
+        default: true
+    pvp.team.list:
+        description: チームリストの閲覧を許可します
         default: true
     pvp.ff:
         description: フレンドリファイアの設定を許可します
         default: true
-    pvp.visible:
+    pvp.fv:
         description: チーム内透明ポーション可視化の設定を許可します
         default: true

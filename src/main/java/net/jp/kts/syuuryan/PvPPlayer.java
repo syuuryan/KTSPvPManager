@@ -1,6 +1,6 @@
 // Decompiled by Jad v1.5.8g. Copyright 2001 Pavel Kouznetsov.
 // Jad home page: http://www.kpdus.com/jad.html
-// Decompiler options: packimports(3) 
+// Decompiler options: packimports(3)
 // Source File Name:   PvPPlayer.java
 
 package net.jp.kts.syuuryan;
@@ -44,6 +44,6 @@ public class PvPPlayer
         player.sendMessage(messages);
     }
 
-    private Player player;
+    private final Player player;
     private ChatMode chatMode;
 }
