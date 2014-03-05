@@ -20,6 +20,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.scoreboard.Scoreboard;
@@ -29,14 +31,13 @@ import org.bukkit.scoreboard.Team;
 // Referenced classes of package net.jp.kts.syuuryan:
 //            PvPPlayer, ChatMode
 
-public class KTSPvPManager extends JavaPlugin
-    implements Listener
-{
+public class KTSPvPManager extends JavaPlugin implements Listener {
     Logger log;
     ScoreboardManager manager;
     Scoreboard board;
     ArrayList<Team> teamList;
-    ArrayList<PvPPlayer> pvpPlayers;
+//    ArrayList<PvPPlayer> pvpPlayers;
+    ArrayList<OfflinePlayer> teamChatPlayers;
 
     @Override
 	public void onEnable()
@@ -46,7 +47,8 @@ public class KTSPvPManager extends JavaPlugin
         manager = Bukkit.getScoreboardManager();
         board = manager.getNewScoreboard();
         teamList = new ArrayList<Team>();
-        pvpPlayers = new ArrayList<PvPPlayer>();
+//        pvpPlayers = new ArrayList<PvPPlayer>();
+        teamChatPlayers = new ArrayList<OfflinePlayer>();
         getServer().getPluginManager().registerEvents(this, this);
     }
 
@@ -59,48 +61,62 @@ public class KTSPvPManager extends JavaPlugin
             team = (Team)iterator.next();
 
         teamList.clear();
-        pvpPlayers.clear();
+//        pvpPlayers.clear();
+        teamChatPlayers.clear();
         board.clearSlot(DisplaySlot.SIDEBAR);
+    }
+
+    @EventHandler
+    public void onJoin(PlayerJoinEvent event) {
+    	Player player = event.getPlayer();
+    	boolean inTeam = false;
+    	for (Team team : board.getTeams()) {
+    		if (team.getPlayers().contains(player)) {
+    			inTeam = true;
+    			break;
+    		}
+    	}
+    	if (inTeam) {
+    		player.setScoreboard(board);
+    	}
+    }
+
+    @EventHandler
+    public  void onQuit(PlayerQuitEvent event) {
+    	Player player = event.getPlayer();
+    	for (OfflinePlayer offlinePlayer : teamChatPlayers) {
+    		if (offlinePlayer.getName().equals(player.getName())) {
+    			teamChatPlayers.remove(offlinePlayer);
+    			break;
+    		}
+    	}
     }
 
     @EventHandler
     public void onChat(AsyncPlayerChatEvent chat)
     {
-        PvPPlayer player = null;
-        for(Iterator iterator = pvpPlayers.iterator(); iterator.hasNext();)
-        {
-            PvPPlayer p = (PvPPlayer)iterator.next();
-            if(p.getPlayer().equals(chat.getPlayer()))
-            {
-                player = p;
-                break;
-            }
+        OfflinePlayer player = null;
+        for (OfflinePlayer p : teamChatPlayers) {
+        	if (p.getName().equals(chat.getPlayer().getName())) {
+        		player = p;
+        		break;
+        	}
         }
 
         if(player == null) {
             return;
         }
-        if(player.getChatMode() == ChatMode.NOMAL) {
-        	return;
-        }
 
-        for(Iterator iterator1 = teamList.iterator(); iterator1.hasNext();)
-        {
-            Team team = (Team)iterator1.next();
-            if(team.getPlayers().contains(player.getPlayer()))
-            {
-                for(Iterator iterator2 = team.getPlayers().iterator(); iterator2.hasNext();)
-                {
-                    OfflinePlayer sendTarget = (OfflinePlayer)iterator2.next();
+        for (Team team : teamList) {
+        	if (team.getPlayers().contains(player.getPlayer())) {
+        		for (OfflinePlayer sendTarget : team.getPlayers()) {
                     if(sendTarget.isOnline())
                         ((Player)sendTarget).sendMessage((new StringBuilder("[TEAM]<")).append(player.getPlayer().getName()).append("> ").append(chat.getMessage()).toString());
-                    else
-                        log.warning((new StringBuilder(String.valueOf(sendTarget.getName()))).append(" is offline!").toString());
-                }
-
-                break;
-            }
+        		}
+        		break;
+        	}
         }
+        log.info((new StringBuilder("[TEAM]<")).append(player.getPlayer().getName()).append("> ").append(chat.getMessage()).toString());
 
         chat.setCancelled(true);
     }
@@ -112,41 +128,34 @@ public class KTSPvPManager extends JavaPlugin
             return false;
         if(sender instanceof ConsoleCommandSender)
             return false;
-        if(cmd.getName().equalsIgnoreCase("pvp"))
-        {
-            if(args.length > 1 && args[0].equalsIgnoreCase("team"))
-            {
+        if(cmd.getName().equalsIgnoreCase("pvp")) {
+            if(args.length > 1 && args[0].equalsIgnoreCase("team")) {
                 if(args[1].equalsIgnoreCase("add"))
                     return addTeam(sender, args);
                 if(args[1].equalsIgnoreCase("join"))
                     return joinPlayerOnTeam(sender, args);
+                if(args[1].equalsIgnoreCase("leave"))
+                    return leaveTeam(sender, args);
+                if(args[1].equalsIgnoreCase("empty"))
+                    return emptyTeam(sender, args);
                 if(args[1].equalsIgnoreCase("remove"))
-                    return removePlayerOnTeam(sender, args);
+                	return removeTeam(sender, args);
                 if(args[1].equalsIgnoreCase("clear"))
-                    return clearTeam(sender, args);
+                	return clearTeam(sender, args);
                 if(args[1].equalsIgnoreCase("list")) {
                 	return seeTeamList(sender);
                 }
             }
-//            else if(args.length > 1 && args[0].equalsIgnoreCase("player"))
-//            {
-//                if(args[1].equalsIgnoreCase("add"))
-//                    return joinPlayerOnTeam(sender, args);
-//                if(args[1].equalsIgnoreCase("remove"))
-//                    return removePlayerOnTeam(sender, args);
-//                if(args[1].equalsIgnoreCase("clear"))
-//                    return clearTeam(sender, args);
-//            }
-            else
-            {
+            else {
                 if(args.length > 0 && args[0].equalsIgnoreCase("ff"))
                     return setFriendlyFire(sender, args);
                 if(args.length > 0 && args[0].equalsIgnoreCase("fv"))
                     return setFriendlyVisibilities(sender, args);
             }
-        } else
-        if(cmd.getName().equalsIgnoreCase("chat"))
+        }
+        else if(cmd.getName().equalsIgnoreCase("chat")) {
             return turnChatMode(sender);
+        }
         return false;
     }
 
@@ -165,60 +174,65 @@ public class KTSPvPManager extends JavaPlugin
 			case 3: color = ChatColor.LIGHT_PURPLE; break;
 			}
 			sender.sendMessage(color + teamList.get(i).getDisplayName());
+			for (OfflinePlayer player : teamList.get(i).getPlayers()) {
+				sender.sendMessage("  " + player.getName());
+			}
 		}
 		return true;
 	}
 
     private boolean turnChatMode(CommandSender sender)
     {
-        PvPPlayer targetPlayer = null;
-        for(Iterator iterator = pvpPlayers.iterator(); iterator.hasNext();)
-        {
-            PvPPlayer player = (PvPPlayer)iterator.next();
-            if(player.getPlayer().getName().equals(sender.getName()))
-            {
-                targetPlayer = player;
-                break;
-            }
-        }
+    	boolean exists = false;
+    	OfflinePlayer player = getServer().getOfflinePlayer(sender.getName());
+    	for (Team team : board.getTeams()) {
+    		if (team.getPlayers().contains(player)) {
+    			exists = true;
+    			break;
+    		}
+    	}
 
-        if(targetPlayer != null)
-        {
-            targetPlayer.turnChatMode();
-            targetPlayer.sendMessage((new StringBuilder("Chat mode is ")).append(targetPlayer.getChatMode()).toString());
-            return true;
-        } else
-        {
-            return false;
-        }
+    	if (!exists) return false;
+
+    	String chatMode = null;
+    	if (teamChatPlayers.contains(player)) {
+        	chatMode = "NOMAL";
+        	teamChatPlayers.remove(player);
+    	}
+    	else {
+        	chatMode = "TEAM";
+        	teamChatPlayers.add(player);
+    	}
+        player.getPlayer().sendMessage("Chat mode is " + chatMode);
+        return true;
     }
 
-    @Deprecated
-    private boolean removeAllTeam(CommandSender sender, String args[])
+    private boolean clearTeam(CommandSender sender, String args[])
     {
         if(board != null)
         {
             Set<Team> teams = board.getTeams();
             if(teams != null)
-                teams.removeAll(teamList);
+                for (Team team : teams)
+                	team.unregister();
         }
-        pvpPlayers.clear();
+        teamChatPlayers.clear();
         teamList.clear();
         return true;
     }
 
-    @Deprecated
     private boolean removeTeam(CommandSender sender, String args[])
     {
         Team team = board.getTeam(args[2]);
-        if(team == null)
-        {
-            return false;
-        } else
-        {
-            teamList.remove(team);
-            return board.getTeams().remove(team);
+        if(team == null) {
+        	log.warning("does not exists " + args[2]);
+        	return false;
         }
+
+        teamChatPlayers.removeAll(team.getPlayers());
+        teamList.remove(team);
+        team.unregister();
+        return true;
     }
 
     private boolean setFriendlyVisibilities(CommandSender sender, String args[])
@@ -297,12 +311,12 @@ public class KTSPvPManager extends JavaPlugin
         return false;
     }
 
-    private boolean clearTeam(CommandSender sender, String args[])
+    private boolean emptyTeam(CommandSender sender, String args[])
     {
         if(args.length != 3)
         {
             String reason = args.length >= 3 ? "Too many arguments. " : "Reason:Lack of arguments. ";
-            sender.sendMessage((new StringBuilder()).append(ChatColor.RED).append(reason).append(ChatColor.RESET).append("NOTICE:/pvp team clear <teamname>").toString());
+            sender.sendMessage((new StringBuilder()).append(ChatColor.RED).append(reason).append(ChatColor.RESET).append("NOTICE:/pvp team empty <teamname>").toString());
             return false;
         }
 
@@ -316,7 +330,7 @@ public class KTSPvPManager extends JavaPlugin
                 for(OfflinePlayer member : teamMembers)
                 {
                     team.removePlayer(member);
-                    pvpPlayers.remove(member);
+                    teamChatPlayers.remove(member);
                     removed = true;
                 }
 
@@ -328,17 +342,17 @@ public class KTSPvPManager extends JavaPlugin
         return removed;
     }
 
-    private boolean removePlayerOnTeam(CommandSender sender, String args[])
+    private boolean leaveTeam(CommandSender sender, String args[])
     {
         if(args.length != 3)
         {
             String reason = args.length >= 3 ? "Too many arguments. " : "Reason:Lack of arguments. ";
-            sender.sendMessage((new StringBuilder()).append(ChatColor.RED).append(reason).append(ChatColor.RESET).append("NOTICE:/pvp team remove <playername>").toString());
+            sender.sendMessage((new StringBuilder()).append(ChatColor.RED).append(reason).append(ChatColor.RESET).append("NOTICE:/pvp team leave <playername>").toString());
             return false;
         }
 
         if (args[2].equalsIgnoreCase("all")) {
-        	return clearTeam(sender, args);
+        	return emptyTeam(sender, args);
         }
 
         Set<Team> teams = board.getTeams();
@@ -353,7 +367,7 @@ public class KTSPvPManager extends JavaPlugin
             if(teamMembers.contains(targetPlayer))
             {
                 team.removePlayer(targetPlayer);
-                pvpPlayers.remove(targetPlayer);
+                teamChatPlayers.remove(targetPlayer);
                 sender.sendMessage((new StringBuilder(String.valueOf(targetPlayer.getName()))).append(" was removed from Team:").append(team.getDisplayName()).toString());
                 return true;
             }
@@ -391,12 +405,13 @@ public class KTSPvPManager extends JavaPlugin
                     break;
                 }
                 team.addPlayer(targetPlayer);
-                if(!pvpPlayers.contains(targetPlayer))
-                    pvpPlayers.add(new PvPPlayer((Player)targetPlayer));
 
                 // スコアボードの設定
+//                if (team.getPlayers().size() == 1) {
+//                	team.addPlayer(Bukkit.getOfflinePlayer(team.getDisplayName()));
+//                }
 //                Objective objective = board.getObjective(DisplaySlot.SIDEBAR);
-//                objective.getScore(Bukkit.getOfflinePlayer(sender.getName()));
+////                objective.getScore(Bukkit.getOfflinePlayer(sender.getName()));
 //                Score score = objective.getScore(Bukkit.getOfflinePlayer(ChatColor.GREEN + "kills"));
 //                score.setScore(0);
 

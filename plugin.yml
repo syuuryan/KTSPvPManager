@@ -1,6 +1,6 @@
 name: KTSPvPManager
 main: net.jp.kts.syuuryan.KTSPvPManager
-version: 1.0.0
+version: 1.2.0
 default-permission: NOT_OP
 commands:
     chat:
@@ -23,6 +23,8 @@ permissions:
         children:
             pvp.team.add: true
             pvp.team.join: true
+            pvp.team.leave: true
+            pvp.team.empty: true
             pvp.team.remove: true
             pvp.team.clear: true
             pvp.team.list: true
@@ -34,11 +36,17 @@ permissions:
     pvp.team.join:
         description: チームへのプレイヤー参加を許可します
         default: true
+    pvp.team.leave:
+        description: チームへのプレイヤー削除を許可します
+        default: true
+    pvp.team.empty:
+        description: チームへのプレイヤー全削除を許可します
+        default: true
     pvp.team.remove:
-        description: プレイヤーのチームからの削除を許可します
+        description: チームの削除を許可します
         default: true
     pvp.team.clear:
-        description: チームから全プレイヤーの削除を許可します
+        description: チームの全削除を許可します
         default: true
     pvp.team.list:
         description: チームリストの閲覧を許可します
